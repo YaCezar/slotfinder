@@ -5,11 +5,10 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 
-# Переменные
 TOKEN = os.getenv('BOT_TOKEN')
 URL = os.getenv('WEBAPP_URL')
 
-# Бронированный костыль для Render
+# Обработчик для проверок Render
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -26,22 +25,19 @@ def run_server():
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🎰 Открыть SlotFinder", web_app=WebAppInfo(url=URL))]])
-    await update.message.reply_text("🎰 Привет! Нажми на кнопку ниже, чтобы запустить поиск слотов:", reply_markup=kb)
+    await update.message.reply_text("🎰 Бот готов к работе. Нажми кнопку ниже:", reply_markup=kb)
 
 async def post_init(app: Application):
     await app.bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="🎰 SlotFinder", web_app=WebAppInfo(url=URL)))
 
 def main():
     if not TOKEN or not URL:
-        print("❌ Ошибка: Нет токена или URL в переменных!")
         return
     
     threading.Thread(target=run_server, daemon=True).start()
     
     app = Application.builder().token(TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
-    
-    print("🤖 Бот запущен!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == '__main__':
